@@ -1,0 +1,112 @@
+﻿<style>
+.row {
+  width: 100%;
+  margin: 0 auto;
+}
+.block {
+  width: 100px;
+  display: inline-block;
+}
+.rangeblock {
+  width: 200px;
+  display: inline-block;
+}
+</style>
+<script src="~/Scripts/jquery-1.8.3.min.js"></script>
+<div>    
+    <select id="date">
+        <option value="2013-1-31" selected="selected">January</option>
+        <option value="2013-02-28">February</option>
+    </select>
+    <select id="symbol">
+        <option value="SBI" selected="selected">SBI</option>
+        <option value="RCF">RELCAP</option>
+    </select>
+    <script type="text/javascript">
+        
+        $(document).ready(function () {
+            function loadValues() {
+
+                var lowerLimit = 2400, upperLimit = 2600, gap = 50;
+                var shortName = $('#symbol').val();
+
+                if (shortName == 'RCF') {
+                    lowerLimit = 400, upperLimit = 500, gap = 20;
+                }
+
+                var ranges = (upperLimit - lowerLimit) / gap;
+                var call = 'CE', put = 'PE';
+                var expiry = $('#date').val();                
+                var event = 0;
+
+                clearDivs();
+
+                for (i = 0; i <= ranges; i++) {
+                    var value = lowerLimit + (gap * i);
+                    var divCall = call + value;
+                    var divPut = put + value;
+                    $('#' + call).append('<div class="block" id="' + divCall + '"></div>');
+                    $('#' + put).append('<div class="block" id="' + divPut + '"></div>');
+                    $('#' + divCall).load('/Home/OptionSummary?shortName=' + shortName + '&type=' + call + '&strike=' + value + '.00&expiry=' + expiry, function () { event++; calculateRange(); });
+                    $('#' + divPut).load('/Home/OptionSummary?shortName=' + shortName + '&type=' + put + '&strike=' + value + '.00&expiry=' + expiry, function () { event++; calculateRange(); });
+                }
+
+                function calculateRange() {
+                    if (event == (ranges * 2) + 2) {
+
+                        for (i = 0; i <= ranges - 2; i++) {
+                            var peRangeValue = lowerLimit + (gap * i);
+                            var ceRangeValue = lowerLimit + (gap * (i + 2));
+                            var range = peRangeValue + '-' + ceRangeValue;
+                            var peValue = parseFloat($('#' + put + peRangeValue + ' a').text());
+                            var ceValue = parseFloat($('#' + call + ceRangeValue + ' a').text());
+
+                            var value = peValue + ceValue;
+
+                            $('#CEPE100').append('<div id="' + range + '"><h4>' + range + ' => ' + peValue + ' + ' + ceValue + ' = ' + value + '</h4></div>');
+                        }
+
+                        for (i = 0; i < ranges; i++) {
+                            var peRangeValue = lowerLimit + (gap * i);
+                            var ceRangeValue = lowerLimit + (gap * (i + 1));
+                            var range = peRangeValue + '-' + ceRangeValue;
+                            var peValue = parseFloat($('#' + put + peRangeValue + ' a').text());
+                            var ceValue = parseFloat($('#' + call + ceRangeValue + ' a').text());
+
+                            var value = peValue + ceValue;
+
+                            $('#CEPE50').append('<div id="' + range + '"><h4><a href="/History/index/' + range + '?symbol=SBIN&expiry=31-01-2013&range=1month">' + range + '</a> => ' + peValue + ' + ' + ceValue + ' = ' + value + '</h4></div>');
+                        }
+                    }
+                }
+            }
+
+            var clearDivs = function () {
+                $('#CE').html('');
+                $('#PE').html('');
+                $('#CEPE100').html('');
+                $('#CEPE50').html('');
+            }
+            $("#fetch").click(function () {
+                loadValues();
+            });
+        });
+    </script>
+</div>
+<div id="fetch">
+    Fetch
+</div>
+<div class="row" id="CE">
+
+</div>
+<div class="row" id="PE">
+
+</div>
+
+<div class="row" id="CEPE100">
+   
+</div>
+<br />
+<div class="row" id="CEPE50">
+   
+</div>
